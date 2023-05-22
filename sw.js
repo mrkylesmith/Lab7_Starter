@@ -9,7 +9,15 @@ self.addEventListener('install', function (event) {
     caches.open(CACHE_NAME).then(function (cache) {
       // B6. TODO - Add all of the URLs from RECIPE_URLs here so that they are
       //            added to the cache when the ServiceWorker is installed
-      return cache.addAll([]);
+      const RECIPE_URLS = [
+        'https://introweb.tech/assets/json/1_50-thanksgiving-side-dishes.json',
+        'https://introweb.tech/assets/json/2_roasting-turkey-breast-with-stuffing.json',
+        'https://introweb.tech/assets/json/3_moms-cornbread-stuffing.json',
+        'https://introweb.tech/assets/json/4_50-indulgent-thanksgiving-side-dishes-for-any-holiday-gathering.json',
+        'https://introweb.tech/assets/json/5_healthy-thanksgiving-recipe-crockpot-turkey-breast.json',
+        'https://introweb.tech/assets/json/6_one-pot-thanksgiving-dinner.json',
+      ];
+      return cache.addAll(RECIPE_URLS);
     })
   );
 });
@@ -32,9 +40,26 @@ self.addEventListener('fetch', function (event) {
   //       fetch(event.request)
   // https://developer.chrome.com/docs/workbox/caching-strategies-overview/
   /*******************************/
-  // B7. TODO - Respond to the event by opening the cache using the name we gave
-  //            above (CACHE_NAME)
-  // B8. TODO - If the request is in the cache, return with the cached version.
-  //            Otherwise fetch the resource, add it to the cache, and return
-  //            network response.
+  // B7. Respond to the event by opening the cache using the name we gave
+  //     above (CACHE_NAME)
+  // B8. If the request is in the cache, return with the cached version.
+  //     Otherwise fetch the resource, add it to the cache, and return
+  //     network response.
+  // Cache first, fall back to network approach
+  event.respondWith(caches.open(CACHE_NAME).then((cache) => {
+    return cache.match(event.request).then((cachedResponse) => {
+      // If the request is in the cache, return the cached response
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      // Otherwise fetch the resource
+      return fetch(event.request).then((fetchedResponse) => {
+        // Add fetched request/response to the cache
+        cache.put(event.request, fetchedResponse.clone());
+
+        // Then return the network response
+        return fetchedResponse;
+      });
+    });
+  }));
 });
